@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        background: #fafafa;
+      }
+      #map {
+        height: 800px !important;
+        width: 800px !important;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+  </head>
+  <body>
+    <!-- TODO: change the element -->
+    <context-provider id="provider">
+      <geolocation-map></geolocation-map>
+    </context-provider>
+
+    <script type="module">
+      import {
+        GeolocationService,
+        GeolocationMap,
+        TODO_REPLACE_NAME_CONTEXT,
+      } from '../dist';
+      import ConductorApi from '@holochain/conductor-api';
+      import { serializeHash } from '@holochain-open-dev/core-types';
+      import { ContextProviderElement } from '@holochain-open-dev/context';
+
+      (async function () {
+        const appWebsocket = await ConductorApi.AppWebsocket.connect(
+          'ws://localhost:8888'
+        );
+        const appInfo = await appWebsocket.appInfo({
+          installed_app_id: 'test-app',
+        });
+
+        const cellId = appInfo.cell_data[0].cell_id;
+
+        const service = new GeolocationService(appWebsocket, cellId);
+
+        await service.geolocateEntry({
+          entryHash: serializeHash(cellId[1]), // This is agent pubkey that is also an entry
+          latitude: 51.6,
+          longitude: -0.09,
+        });
+
+        customElements.define('context-provider', ContextProviderElement);
+
+        const provider = document.getElementById('provider');
+        provider.name = TODO_REPLACE_NAME_CONTEXT;
+        provider.value = service;
+
+        customElements.define('geolocation-map', GeolocationMap);
+      })();
+    </script>
+  </body>
+</html>
